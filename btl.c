@@ -1,7 +1,24 @@
+
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 #include <ctype.h>
-typedef enum
+#define MAX_LENGTH_COMMAND 300
+#define MAX_NO_TASKS 100
+#define MAX_LENGTH_TITLE 100
+#define MAX_LENGTH_DESCRIPTION 200
+#define MAX_LENGTH_TIME 33
+#define WEEK_CELL_FIRST_COL_WIDTH 10
+#define WEEK_CELL_OTHER_COL_WIDTH 20
+enum Status
+{
+    IN_PROGRESS,
+    DONE,
+    ARCHIVED
+};
+char *status_name[] = {"In Progress", "Done", "Archived"};
+enum CommandType
 {
     ADD,
     EDIT,
@@ -9,9 +26,33 @@ typedef enum
     DELETE,
     QUIT,
     INVALID
-} CommandType;
-
-CommandType getCommandType(const char *command)
+};
+char *command_name[] = {"ADD", "EDIT", "SHOW", "DELETE", "QUIT", "INVALID"};
+struct Task
+{
+    int num;
+    char title[MAX_LENGTH_TITLE + 1];
+    char description[MAX_LENGTH_DESCRIPTION + 1];
+    char time[MAX_LENGTH_TIME + 1];
+    enum Status status;
+};
+void printTask(struct Task *task)
+{
+    printf("--------------------------------------------\n");
+    printf("Num: #%d. Title: %s\n", task->num, task->title);
+    printf("Description: %s\n", task->description);
+    printf("Status: %s\n", status_name[task->status]);
+    printf("--------------------------------------------\n");
+}
+void printUnsupportedTime(struct Task *task)
+{
+    printf("----- Show week view -----\n");
+    printf("Error: Unsupported time with non-zero minutes: %s\n", task->time);
+    printf("In Task:\n");
+    printTask(task);
+}
+// ------ Begin: Student Answer ------
+enum CommandType getCommandType(char *command)
 {
     char commandCopy[200];
     strncpy(commandCopy, command, sizeof(commandCopy));
@@ -26,7 +67,7 @@ CommandType getCommandType(const char *command)
     struct
     {
         const char *name;
-        CommandType type;
+        enum CommandType type;
     } commandTypes[] = {
         {"Add", ADD},
         {"Edit", EDIT},
@@ -42,9 +83,10 @@ CommandType getCommandType(const char *command)
             return commandTypes[i].type; // Trả về kiểu lệnh nếu tìm thấy
         }
     }
-
     return INVALID; // Trả về INVALID nếu không tìm thấy
 }
+// Other functions
+
 // Thành phần Add
 int checkTitle(char *raw_title)
 {
@@ -66,9 +108,10 @@ int checkTitle(char *raw_title)
     }
     return -1;
 }
+
 void getTitleFromAdd(char *command, char *out_title)
 {
-    char *start = strchr(command, '[') + 1;
+    char *start = strchr(command, '[') + 1; // Tìm thấy ký tự '[' đầu tiên
     char *end = strchr(start, ']');
     strncpy(out_title, start, end - start);
     out_title[end - start] = '\0';
@@ -76,7 +119,7 @@ void getTitleFromAdd(char *command, char *out_title)
 
 void getDescriptionFromAdd(char *command, char *out_description)
 {
-    char *start = strchr(strchr(command, '[') + 1, '[') + 1;
+    char *start = strchr(strchr(command, '[') + 1, '[') + 1; // Tìm thấy ký tự '[' thứ 2
     char *end = strchr(start, ']');
     strncpy(out_description, start, end - start);
     out_description[end - start] = '\0';
@@ -84,11 +127,12 @@ void getDescriptionFromAdd(char *command, char *out_description)
 
 void getTimeFromAdd(char *command, char *out_time)
 {
-    char *start = strchr(strchr(strchr(command, '[') + 1, '[') + 1, '[') + 1;
+    char *start = strchr(strchr(strchr(command, '[') + 1, '[') + 1, '[') + 1; // Tìm thấy ký tự '[' thứ 3
     char *end = strchr(start, ']');
     strncpy(out_time, start, end - start);
     out_time[end - start] = '\0';
 }
+
 int checkDescription(char *raw_description)
 {
     int length = strlen(raw_description);
@@ -109,6 +153,7 @@ int checkDescription(char *raw_description)
     }
     return -1;
 }
+
 int isLeapYear(int year)
 {
     return year % 400 == 0 || (year % 100 != 0 && year % 4 == 0);
@@ -168,26 +213,224 @@ int checkTime(char *raw_time)
     }
     return 0;
 }
-// Thành phàn Add
+// Thành phần Edit
+void getTitleFromEdit(char *command, char *out_title)
+{
+    char *start = strchr(command, '[') + 1; // Find the first '['
+    char *end = strchr(start, ']');         // Find the first ']' after the first '['
+    strncpy(out_title, start, end - start);
+    out_title[end - start] = '\0';
+}
 
+void getDescriptionFromEdit(char *command, char *out_description)
+{
+    char *start = strchr(strchr(command, '[') + 1, '[') + 1; // Find the second '['
+    char *end = strchr(start, ']');                          // Find the first ']' after the second '['
+    strncpy(out_description, start, end - start);
+    out_description[end - start] = '\0';
+}
+
+void getTimeFromEdit(char *command, char *out_time)
+{
+    char *start = strchr(strchr(strchr(command, '[') + 1, '[') + 1, '[') + 1; // Find the third '['
+    char *end = strchr(start, ']');                                           // Find the first ']' after the third '['
+    strncpy(out_time, start, end - start);
+    out_time[end - start] = '\0';
+}
+int getNumFromCommand(char *command)
+{
+    char *start = strchr(command, '#');
+    if (start == NULL)
+    {
+        return -1;
+    }
+    start += 1;
+    char *end;
+    long num = strtol(start, &end, 10);
+    if (end == start)
+    {
+        return 0;
+    }
+    return (int)num;
+}
+int getFieldFromEdit(char *edit_cmd)
+{
+    char *start = strchr(strchr(edit_cmd, ' ') + 1, ' ') + 1; // Find the second ' '
+    char *end = strchr(start, ':');                           // Find the first ':' after the second ' '
+    char field[end - start + 1];
+    strncpy(field, start, end - start);
+    field[end - start] = '\0';
+    if (strcmp(field, "title") == 0)
+    {
+        return 1;
+    }
+    else if (strcmp(field, "description") == 0)
+    {
+        return 2;
+    }
+    else if (strcmp(field, "time") == 0)
+    {
+        return 3;
+    }
+    else if (strcmp(field, "status") == 0)
+    {
+        return 4;
+    }
+    else
+    {
+        return 0;
+    }
+}
+enum Status getStatusFromEdit(char *edit_cmd)
+{
+    char *start = strchr(edit_cmd, ':') + 1; // Find the first ':'
+    char status = *start;
+    switch (status)
+    {
+    case 'I':
+    case 'i':
+        return IN_PROGRESS;
+    case 'D':
+    case 'd':
+        return DONE;
+    case 'A':
+    case 'a':
+        return ARCHIVED;
+    default:
+        return INVALID;
+    }
+}
+// Thành phần Show
+void printAllTasks(struct Task *array_tasks, int no_tasks)
+{
+    for (int i = 0; i < no_tasks; i++)
+    {
+        printTask(&array_tasks[i]);
+    }
+}
+void printTaskByNum(struct Task *array_tasks, int no_tasks, int num)
+{
+    for (int i = 0; i < no_tasks; i++)
+    {
+        if (array_tasks[i].num == num)
+        {
+            printTask(&array_tasks[i]);
+            break;
+        }
+    }
+}
+void printHeadTasks(struct Task *array_tasks, int no_tasks, int quan)
+{
+    int tasks_to_print = quan < no_tasks ? quan : no_tasks;
+    for (int i = 0; i < tasks_to_print; i++)
+    {
+        printTask(&array_tasks[i]);
+    }
+}
+void printTailTasks(struct Task *array_tasks, int no_tasks, int quan)
+{
+    int start = no_tasks - quan > 0 ? no_tasks - quan : 0;
+    for (int i = start; i < no_tasks; i++)
+    {
+        printTask(&array_tasks[i]);
+    }
+}
+
+void printFilteredTasksByTitle(struct Task *array_tasks, int no_tasks, char *filter_title)
+{
+    for (int i = 0; i < no_tasks; i++)
+    {
+        if (strstr(array_tasks[i].title, filter_title) != NULL)
+        {
+            printTask(&array_tasks[i]);
+        }
+    }
+}
+
+void printFilteredTasksByDescription(struct Task *array_tasks, int no_tasks, char *filter_description)
+{
+    for (int i = 0; i < no_tasks; i++)
+    {
+        if (strstr(array_tasks[i].description, filter_description) != NULL)
+        {
+            printTask(&array_tasks[i]);
+        }
+    }
+}
+
+void printFilteredTasksByStatus(struct Task *array_tasks, int no_tasks, enum Status filter_status)
+{
+    for (int i = 0; i < no_tasks; i++)
+    {
+        if (array_tasks[i].status == filter_status)
+        {
+            printTask(&array_tasks[i]);
+        }
+    }
+}
+// Thành phần Add
+bool addTask(struct Task *array_tasks, int *no_tasks, char *new_title, char *new_description, char *new_time)
+{
+    if (*no_tasks == MAX_NO_TASKS)
+    {
+        return false;
+    }
+
+    strcpy(array_tasks[*no_tasks].title, new_title);
+    strcpy(array_tasks[*no_tasks].description, new_description);
+    strcpy(array_tasks[*no_tasks].time, new_time);
+    array_tasks[*no_tasks].num = *no_tasks + 1;
+    array_tasks[*no_tasks].status = IN_PROGRESS;
+
+    (*no_tasks)++;
+    return true;
+}
+// Thành phần delete
+bool deleteTask(struct Task *array_tasks, int *no_tasks, int num)
+{
+    if (num < 1 || num > *no_tasks)
+    {
+        return false;
+    }
+
+    for (int i = num - 1; i < *no_tasks - 1; i++)
+    {
+        array_tasks[i] = array_tasks[i + 1];
+    }
+
+    (*no_tasks)--;
+
+    for (int i = num - 1; i < *no_tasks; i++)
+    {
+        array_tasks[i].num = i + 1;
+    }
+
+    return true;
+}
+
+// ------ End: Student Answer ------
+void runTodoApp()
+{
+    // Example of command Add
+    char command[MAX_LENGTH_COMMAND + 1];
+
+    while (true)
+    {
+        // Sample input:
+        // Add [Course Intro to Programming] [Room 701-H6] [07:00|01/10/2023-
+        // 12:00|01/10/2023]
+        fgets(command, MAX_LENGTH_COMMAND + 1, stdin);
+        command[strlen(command) - 1] = '\0';
+
+        enum CommandType commandType = getCommandType(command);
+        printf("Command : %s\n", command);
+        printf("Command type: %s\n", command_name[commandType]);
+        break; // only one loop for simple test
+               // actual app will break when encounter QUIT command
+    }
+}
 int main()
 {
-    char command[100];
-    printf("Nhập lệnh: ");
-    fgets(command, sizeof(command), stdin);
-    strtok(command, "\n"); // Loại bỏ ký tự newline khi đọc chuỗi từ bàn phím
-    CommandType type = getCommandType(command);
-    printf("Kiểu lệnh: %d\n", type);
-    char command[] = "Add [Course Intro to Programming] [Room 701-H6] [07:00|01/10/2023-12:00|01/10/2023]";
-    char raw_title[200];
-    char raw_description[200];
-    char raw_time[200];
-    getTitleFromAdd(command, raw_title);
-    getDescriptionFromAdd(command, raw_description);
-    getTimeFromAdd(command, raw_time);
-    printf("raw_title: %s\n", raw_title);
-    printf("raw_description: %s\n", raw_description);
-    printf("raw_time: %s\n", raw_time);
-
+    runTodoApp();
     return 0;
 }
