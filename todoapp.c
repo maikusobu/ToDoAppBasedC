@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
-#include <ctype.h>
 #define MAX_LENGTH_COMMAND 300
 #define MAX_NO_TASKS 100
 #define MAX_LENGTH_TITLE 100
@@ -132,7 +131,15 @@ void getTimeFromAdd(char *command, char *out_time)
     strncpy(out_time, start, end - start);
     out_time[end - start] = '\0';
 }
+bool is_space(char c)
+{
+    return c == ' ';
+}
 
+bool is_alphanumeric(char c)
+{
+    return (c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
+}
 int checkDescription(char *raw_description)
 {
     int length = strlen(raw_description);
@@ -140,13 +147,13 @@ int checkDescription(char *raw_description)
     {
         return length;
     }
-    if (isspace(raw_description[0]) || isspace(raw_description[length - 1]))
+    if (is_space(raw_description[0]) || is_space(raw_description[length - 1])) // Nếu ký tự đầu hoặc cuối là khoảng trắng thì trả về vị trí lỗi
     {
         return 0;
     }
     for (int i = 0; i < length; ++i)
     {
-        if (!(isalnum(raw_description[i]) || strchr(" ,.-:|/", raw_description[i])))
+        if (!(is_alphanumeric(raw_description[i]) || strchr(" ,.-:|/", raw_description[i]))) // Nếu không phải là ký tự đặc biệt thì trả về vị trí lỗi
         {
             return i;
         }
@@ -163,7 +170,7 @@ int checkTime(char *raw_time)
 {
     int day1, month1, year1, hour1, minute1;
     int day2, month2, year2, hour2, minute2;
-    if (sscanf(raw_time, "%d:%d|%d/%d/%d-%d:%d|%d/%d/%d", &hour1, &minute1, &day1, &month1, &year1, &hour2, &minute2, &day2, &month2, &year2) != 10)
+    if (sscanf(raw_time, "%d:%d|%d/%d/%d-%d:%d|%d/%d/%d", &hour1, &minute1, &day1, &month1, &year1, &hour2, &minute2, &day2, &month2, &year2) != 10) // Nếu không đọc được 10 giá trị thì trả về vị trí lỗi
     {
         return 0;
     }
@@ -207,7 +214,10 @@ int checkTime(char *raw_time)
     {
         return 52 + month2;
     }
-    if (year1 < year2 || (year1 == year2 && (month1 < month2 || (month1 == month2 && (day1 < day2 || (day1 == day2 && (hour1 < hour2 || (hour1 == hour2 && minute1 < minute2))))))))
+    if (year1 < year2 || (year1 == year2 && (month1 < month2 || (month1 == month2 && (day1 < day2 || (day1 == day2 && (hour1 < hour2 || (hour1 == hour2 && minute1 < minute2)))))))) // Nếu thời gian bắt đầu lớn hơn thời gian kết thúc thì trả về vị trí lỗi
+    {
+        return 62;
+    }
     {
         return -1;
     }
@@ -318,9 +328,9 @@ enum Status getStatusFromEdit(char *edit_cmd)
 int isTimeEven(char *time)
 {
     char *start_time = time;
-    while ((start_time = strchr(start_time, ':')) != NULL)
+    while ((start_time = strchr(start_time, ':')) != NULL) // Tìm thấy ký tự ':' đầu tiên
     {
-        start_time++;
+        start_time++; // Bỏ qua ký tự ':'
         char *end_time = strchr(start_time, '|');
         if (end_time == NULL)
         {
@@ -331,13 +341,13 @@ int isTimeEven(char *time)
             }
         }
         char minute[3];
-        strncpy(minute, start_time, end_time - start_time);
-        minute[end_time - start_time] = '\0';
+        strncpy(minute, start_time, end_time - start_time); // Lấy phút
+        minute[end_time - start_time] = '\0';               // Lấy phút
         if (strcmp(minute, "00") != 0)
         {
-            return 0;
+            return 0; // Nếu phút khác 00 thì trả về 0
         }
-        start_time = end_time;
+        start_time = end_time; // Tiếp tục tìm ký tự ':' tiếp theo
     }
     return 1;
 }
@@ -421,7 +431,11 @@ int printWeekTime(struct Task *array_tasks, int no_tasks, char *date)
     printf("Các công việc trong tuần bắt đầu từ ngày %s:\n", date);
     for (int i = 0; i < no_tasks; i++)
     {
-        if (strstr(array_tasks[i].time, date + 4) != NULL)
+        char *time = array_tasks[i].time;
+        char *date_part = strtok(time, "|");
+        date_part = strtok(NULL, "|");
+
+        if (strcmp(date_part, date + 4) == 0)
         {
             printf("Tiêu đề: %s\n", array_tasks[i].title);
             printf("Mô tả: %s\n", array_tasks[i].description);
@@ -592,6 +606,9 @@ void TestFunction() // Yêu cầu 20
                 }
             }
         }
+        // Show all
+        // Show #1...
+
         if (command_name[commandType] == "SHOW")
         {
             char filter_title[MAX_LENGTH_TITLE + 1];
@@ -659,12 +676,13 @@ void TestFunction() // Yêu cầu 20
                 }
             }
         }
+        // Delete #1
         if (command_name[commandType] == "DELETE")
         {
             int num = getNumFromCommand(command);
             if (num == -1)
             {
-                printf("Cannot find task with num %d\n", num);
+                printf("wrong format %d\n", num);
             }
             else if (num == 0)
             {
@@ -696,7 +714,6 @@ void runTodoApp()
         // 12:00|01/10/2023]
         fgets(command, MAX_LENGTH_COMMAND + 1, stdin);
         command[strlen(command) - 1] = '\0';
-
         enum CommandType commandType = getCommandType(command);
         printf("Command : %s\n", command);
         printf("Command type: %s\n", command_name[commandType]);
@@ -706,6 +723,6 @@ void runTodoApp()
 }
 int main()
 {
-    TestFunction();
+    runTodoApp(); // Nếu thực hiện yêu cầu 20 thì chạy hàm TestFunction() thay cho hàm runTodoApp()
     return 0;
 }
