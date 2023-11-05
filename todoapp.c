@@ -177,69 +177,69 @@ int checkTime(char *raw_time)
     {
         if (month1 == 2 && (day1 > 29 || day1 < 1))
         {
-            return 31;
+            return 3100 + day1;
         }
     }
     else
     {
         if (month1 == 2 && (day1 > 28 || day1 < 1))
         {
-            return 31;
+            return 3100 + day1;
         }
     }
     if (hour1 < 0 || hour1 > 23)
     {
-        return 11;
+        return 1100 + hour1;
     }
     if (minute1 < 0 || minute1 > 59)
     {
-        return 21;
+        return 2100 + minute1;
     }
     if (day1 < 1 || day1 > 31)
     {
-        return 31;
+        return 3100 + day1;
     }
     if (month1 < 1 || month1 > 12)
     {
-        return 41;
+        return 4100 + month1;
     }
     if (year1 < 1)
     {
-        return 51;
+        return 510000 + year1;
     }
     if (isLeapYear(year2))
     {
         if (month2 == 2 && (day2 > 29 || day2 < 1))
         {
-            return 32;
+            return 3200 + day2;
         }
     }
     else
     {
         if (month2 == 2 && (day2 > 28 || day2 < 1))
         {
-            return 32;
+            return 3200 + day2;
         }
     }
     if (hour2 < 0 || hour2 > 23)
     {
-        return 12;
+        return 1200 + hour2;
     }
     if (minute2 < 0 || minute2 > 59)
     {
-        return 22;
+        return 2200 + minute2;
     }
     if (day2 < 1 || day2 > 31)
     {
-        return 32;
+        return 3200 + day2;
     }
     if (month2 < 1 || month2 > 12)
     {
-        return 42;
+        return 4200 + month2;
     }
     if (year2 < 1)
     {
-        return 52;
+        return 520000 + year2;
     }
     if (minute1 + hour1 * 60 + day1 * 1440 + month1 * 44640 + year1 * 535680 > minute2 + hour2 * 60 + day2 * 1440 + month2 * 44640 + year2 * 535680)
     {
