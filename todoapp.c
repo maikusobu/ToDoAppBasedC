@@ -171,59 +171,83 @@ int checkTime(char *raw_time)
 {
     int day1, month1, year1, hour1, minute1;
     int day2, month2, year2, hour2, minute2;
-    if (sscanf(raw_time, "%d:%d|%d/%d/%d-%d:%d|%d/%d/%d", &hour1, &minute1, &day1, &month1, &year1, &hour2, &minute2, &day2, &month2, &year2) != 10) // Nếu không đọc được 10 giá trị thì trả về vị trí lỗi
+    sscanf(raw_time, "%d:%d|%d/%d/%d-%d:%d|%d/%d/%d", &hour1, &minute1, &day1, &month1, &year1, &hour2, &minute2, &day2, &month2, &year2);
+
+    if (isLeapYear(year1))
     {
-        return 0;
+        if (month1 == 2 && (day1 > 29 || day1 < 1))
+        {
+            return 31;
+        }
+    }
+    else
+    {
+        if (month1 == 2 && (day1 > 28 || day1 < 1))
+        {
+            return 31;
+        }
     }
     if (hour1 < 0 || hour1 > 23)
     {
-        return 11 + hour1;
+        return 11;
     }
     if (minute1 < 0 || minute1 > 59)
     {
-        return 21 + minute1;
+        return 21;
     }
     if (day1 < 1 || day1 > 31)
     {
-        return 31 + day1;
+        return 31;
     }
     if (month1 < 1 || month1 > 12)
     {
-        return 41 + month1;
+        return 41;
     }
     if (year1 < 1)
     {
-        return 51 + year1;
+        return 51;
+    }
+    if (isLeapYear(year2))
+    {
+        if (month2 == 2 && (day2 > 29 || day2 < 1))
+        {
+            return 32;
+        }
+    }
+    else
+    {
+        if (month2 == 2 && (day2 > 28 || day2 < 1))
+        {
+            return 32;
+        }
     }
     if (hour2 < 0 || hour2 > 23)
     {
-        return 12 + hour2;
+        return 12;
     }
     if (minute2 < 0 || minute2 > 59)
     {
-        return 22 + minute2;
+        return 22;
     }
     if (day2 < 1 || day2 > 31)
     {
-        return 32 + day2;
+        return 32;
     }
     if (month2 < 1 || month2 > 12)
     {
-        return 42 + month2;
+        return 42;
     }
     if (year2 < 1)
     {
-        return 52 + month2;
+        return 52;
     }
-    if (year1 < year2 || (year1 == year2 && (month1 < month2 || (month1 == month2 && (day1 < day2 || (day1 == day2 && (hour1 < hour2 || (hour1 == hour2 && minute1 < minute2)))))))) // Nếu thời gian bắt đầu lớn hơn thời gian kết thúc thì trả về vị trí lỗi
+    if (minute1 + hour1 * 60 + day1 * 1440 + month1 * 44640 + year1 * 535680 > minute2 + hour2 * 60 + day2 * 1440 + month2 * 44640 + year2 * 535680)
     {
-        return 62;
+        return 0;
     }
-    {
-        return -1;
-    }
-    return 0;
+    return -1;
 }
+
 bool addTask(struct Task *array_tasks, int *no_tasks, char *new_title, char *new_description, char *new_time)
 {
     if (*no_tasks == MAX_NO_TASKS)
