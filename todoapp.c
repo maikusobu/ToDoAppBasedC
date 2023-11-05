@@ -87,6 +87,15 @@ enum CommandType getCommandType(char *command)
 // Other functions
 
 // Thành phần Add
+bool is_space(char c)
+{
+    return c == ' ';
+}
+
+bool is_alphanumeric(char c)
+{
+    return (c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
+}
 int checkTitle(char *raw_title)
 {
     int length = strlen(raw_title);
@@ -94,13 +103,13 @@ int checkTitle(char *raw_title)
     {
         return length;
     }
-    if (isspace(raw_title[0]) || isspace(raw_title[length - 1]))
+    if (is_space(raw_title[0]) || is_space(raw_title[length - 1]))
     {
         return 0;
     }
     for (int i = 0; i < length; ++i)
     {
-        if (!(isalnum(raw_title[i]) || strchr(" ,.-:|/", raw_title[i])))
+        if (!(is_alphanumeric(raw_title[i]) || strchr(" ,.-:|/", raw_title[i])))
         {
             return i;
         }
@@ -131,15 +140,7 @@ void getTimeFromAdd(char *command, char *out_time)
     strncpy(out_time, start, end - start);
     out_time[end - start] = '\0';
 }
-bool is_space(char c)
-{
-    return c == ' ';
-}
 
-bool is_alphanumeric(char c)
-{
-    return (c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
-}
 int checkDescription(char *raw_description)
 {
     int length = strlen(raw_description);
