@@ -172,21 +172,6 @@ int checkTime(char *raw_time)
     int day1, month1, year1, hour1, minute1;
     int day2, month2, year2, hour2, minute2;
     sscanf(raw_time, "%d:%d|%d/%d/%d-%d:%d|%d/%d/%d", &hour1, &minute1, &day1, &month1, &year1, &hour2, &minute2, &day2, &month2, &year2);
-
-    if (isLeapYear(year1))
-    {
-        if (month1 == 2 && (day1 > 29 || day1 < 1))
-        {
-            return 3100 + day1;
-        }
-    }
-    else
-    {
-        if (month1 == 2 && (day1 > 28 || day1 < 1))
-        {
-            return 3100 + day1;
-        }
-    }
     if (hour1 < 0 || hour1 > 23)
     {
         return 1100 + hour1;
@@ -195,31 +180,44 @@ int checkTime(char *raw_time)
     {
         return 2100 + minute1;
     }
-    if (day1 < 1 || day1 > 31)
+    if (month1 == 1 || month1 == 3 || month1 == 5 || month1 == 7 || month1 == 8 || month1 == 10 || month1 == 12)
     {
-        return 3100 + day1;
+        if (day1 < 1 || day1 > 31)
+        {
+            return 3100 + day1;
+        }
     }
-    if (month1 < 1 || month1 > 12)
+    else if (month1 == 4 || month1 == 6 || month1 == 9 || month1 == 11)
+    {
+        if (day1 < 1 || day1 > 30)
+        {
+            return 3100 + day1;
+        }
+    }
+    else if (month1 == 2)
+    {
+        if (isLeapYear(year1))
+        {
+            if (day1 < 1 || day1 > 29)
+            {
+                return 3100 + day1;
+            }
+        }
+        else
+        {
+            if (day1 < 1 || day1 > 28)
+            {
+                return 3100 + day1;
+            }
+        }
+    }
+    else
     {
         return 4100 + month1;
     }
     if (year1 < 1)
     {
         return 510000 + year1;
-    }
-    if (isLeapYear(year2))
-    {
-        if (month2 == 2 && (day2 > 29 || day2 < 1))
-        {
-            return 3200 + day2;
-        }
-    }
-    else
-    {
-        if (month2 == 2 && (day2 > 28 || day2 < 1))
-        {
-            return 3200 + day2;
-        }
     }
     if (hour2 < 0 || hour2 > 23)
     {
@@ -229,11 +227,38 @@ int checkTime(char *raw_time)
     {
         return 2200 + minute2;
     }
-    if (day2 < 1 || day2 > 31)
+    if (month2 == 1 || month2 == 3 || month2 == 5 || month2 == 7 || month2 == 8 || month2 == 10 || month2 == 12)
     {
-        return 3200 + day2;
+        if (day2 < 1 || day2 > 31)
+        {
+            return 3200 + day2;
+        }
     }
-    if (month2 < 1 || month2 > 12)
+    else if (month2 == 4 || month2 == 6 || month2 == 9 || month2 == 11)
+    {
+        if (day2 < 1 || day2 > 30)
+        {
+            return 3200 + day2;
+        }
+    }
+    else if (month2 == 2)
+    {
+        if (isLeapYear(year2))
+        {
+            if (day2 < 1 || day2 > 29)
+            {
+                return 3200 + day2;
+            }
+        }
+        else
+        {
+            if (day2 < 1 || day2 > 28)
+            {
+                return 3200 + day2;
+            }
+        }
+    }
+    else
     {
         return 4200 + month2;
     }
@@ -241,6 +266,7 @@ int checkTime(char *raw_time)
     {
         return 520000 + year2;
     }
+
     if (minute1 + hour1 * 60 + day1 * 1440 + month1 * 44640 + year1 * 535680 > minute2 + hour2 * 60 + day2 * 1440 + month2 * 44640 + year2 * 535680)
     {
         return 0;
